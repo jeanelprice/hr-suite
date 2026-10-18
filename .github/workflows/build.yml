@@ -17,6 +17,28 @@ permissions:
   contents: write
 
 jobs:
+  # Vérification sur PHP 8.5 (version installée par Laravel Herd sur les postes)
+  test-php85:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: intl, mbstring, pdo_sqlite, sqlite3, zip, bcmath, gd
+          tools: composer:v2
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Tests sur PHP 8.5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp .env.example .env && php artisan key:generate
+          set -o pipefail
+          { php -v | head -1; php artisan test --no-ansi; } 2>&1 | tee rapport-php85.txt || STATUS=echec
+          gh release delete php85 --yes --cleanup-tag 2>/dev/null || true
+          gh release create php85 rapport-php85.txt --title "Tests PHP 8.5 (${GITHUB_SHA::7}) ${STATUS:-ok}" --notes "Rapport de compatibilité PHP 8.5" --target "$GITHUB_SHA" --prerelease
+
   build:
     runs-on: ubuntu-latest
     steps:
