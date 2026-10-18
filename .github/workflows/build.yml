@@ -1,0 +1,86 @@
+name: Construction et tests
+
+# À chaque mise à jour de la branche main, GitHub :
+#  1. installe PHP et tous les composants (accès normal à Packagist) ;
+#  2. prépare une base SQLite et lance les tests automatiques ;
+#  3. publie le résultat dans l'onglet « Releases » du dépôt :
+#     - hr-suite-pret-a-l-emploi.zip : l'application complète, composants inclus
+#       (à décompresser dans le dossier Herd, sans avoir besoin de Composer) ;
+#     - rapport-tests.txt : le journal des tests.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: intl, mbstring, pdo_sqlite, sqlite3, zip, bcmath, gd
+          tools: composer:v2
+
+      - name: Installer les composants
+        run: |
+          if [ -f composer.lock ]; then composer install --no-interaction --prefer-dist --no-progress
+          else composer update --no-interaction --prefer-dist --no-progress; fi
+
+      - name: Préparer l'application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+          touch database/database.sqlite
+          php artisan migrate --force --no-interaction
+
+      - name: Tests
+        id: tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            echo "Commit : ${GITHUB_SHA}"
+            echo "Date   : $(date -u '+%Y-%m-%d %H:%M UTC')"
+            php -v | head -1
+            php artisan --version
+            composer show filament/filament 2>/dev/null | grep -E '^(name|versions)' || true
+            echo "------------------------------------------------------------"
+            php artisan test --no-ansi
+          } 2>&1 | tee rapport-tests.txt
+
+      - name: Construire le ZIP prêt à l'emploi
+        if: steps.tests.outcome == 'success'
+        run: |
+          rm -f .env database/database.sqlite
+          mkdir -p /tmp/out/hr-suite
+          rsync -a --exclude .git --exclude rapport-tests.txt ./ /tmp/out/hr-suite/
+          (cd /tmp/out && zip -qr hr-suite-pret-a-l-emploi.zip hr-suite)
+          mv /tmp/out/hr-suite-pret-a-l-emploi.zip .
+
+      - name: Publier dans Releases
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STATUS="${{ steps.tests.outcome }}"
+          SHORT="${GITHUB_SHA::7}"
+          if [ "$STATUS" = "success" ]; then
+            TAG="build-latest"; TITLE="HR Suite — dernière version (${SHORT})"
+            NOTES="✅ Tests réussis. Téléchargez hr-suite-pret-a-l-emploi.zip et suivez le README."
+            FILES="hr-suite-pret-a-l-emploi.zip rapport-tests.txt composer.lock"
+          else
+            TAG="build-echec"; TITLE="HR Suite — échec des tests (${SHORT})"
+            NOTES="❌ Les tests ont échoué : voir rapport-tests.txt. La version précédente reste disponible dans « build-latest »."
+            FILES="rapport-tests.txt"
+          fi
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" $FILES --title "$TITLE" --notes "$NOTES" --target "$GITHUB_SHA" --prerelease
+          if [ "$STATUS" = "success" ]; then gh release delete build-echec --yes --cleanup-tag 2>/dev/null || true; fi
+          [ "$STATUS" = "success" ]
