@@ -1,7 +1,3 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
-    return view('welcome');
-});
+// Toutes les pages de HR Suite sont servies par le panneau Filament (app/Providers/Filament).

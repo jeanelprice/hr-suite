@@ -47,6 +47,12 @@ class Budget extends Model
         return $this->hasMany(BudgetLine::class)->orderBy('code');
     }
 
+    /** Lignes en vigueur (une ligne ajoutée par une révision est inactive tant qu'elle n'est pas validée) */
+    public function activeLines(): HasMany
+    {
+        return $this->hasMany(BudgetLine::class)->where('is_active', true)->orderBy('code');
+    }
+
     public function label(): string
     {
         return "{$this->project->code} — {$this->fiscalYear->year}";

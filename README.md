@@ -1,58 +1,90 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# HR Suite — Humanité et Résilience
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+ERP de l'ONG **Humanité et Résilience** (Goma, Nord-Kivu), construit avec **Laravel 13**
+et **Filament 5**. Cette première version couvre la **Phase 1 Finances & Achats** du cahier des
+charges v1.1 : projets, budgets versionnés, demandes d'achat, bons de commande, paiements,
+dérogations, comptes et habilitations, journal d'audit.
 
-## About Laravel
+## Installer sur un ordinateur Windows (sans Composer, sans internet)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Prérequis : **Laravel Herd** installé (https://herd.laravel.com).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. Sur la page du dépôt GitHub, ouvrez **Releases** → **HR Suite — dernière version**,
+   puis téléchargez **`hr-suite-pret-a-l-emploi.zip`**.
+2. Si un ancien dossier `C:\Users\<vous>\Herd\hr-suite` existe, renommez-le (par exemple `hr-suite-ancien`).
+3. Décompressez le ZIP dans `C:\Users\<vous>\Herd` : vous obtenez le dossier `Herd\hr-suite`.
+4. Ouvrez PowerShell et tapez :
+   ```
+   cd $env:USERPROFILE\Herd\hr-suite
+   php artisan hr:installer
+   ```
+5. Ouvrez **http://hr-suite.test** et connectez-vous avec un compte de démonstration.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Rôle | Email | Mot de passe |
+|---|---|---|
+| Direction Exécutive | direction@humaniteresilience.org | ChangezMoi123! |
+| DE adjointe (suppléante) | adjointe@humaniteresilience.org | ChangezMoi123! |
+| Financier | financier@humaniteresilience.org | ChangezMoi123! |
+| Chef de projet | chef.projet@humaniteresilience.org | ChangezMoi123! |
+| Comité de Contrôle | controle@humaniteresilience.org | ChangezMoi123! |
 
-## Learning Laravel
+Pour repartir d'une base de démonstration neuve (tout est effacé) : `php artisan hr:installer --force`.
+Pour une base sans données de démonstration : `php artisan hr:installer --force --sans-demo`.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Essayer le circuit complet
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. **Chef de projet** : *Achats → Demandes d'achat → Nouvelle demande*. Le solde de chaque ligne
+   s'affiche ; une demande qui le dépasse est bloquée et une alerte part aux responsables.
+2. Ouvrez la demande → **Soumettre pour validation**.
+3. **Direction Exécutive** : **Valider** → le montant est pré-engagé (visible dans *Finances → Budgets → Tableau de bord*).
+4. **Chef de projet** : **Établir le bon de commande** → **Soumettre** ; **DE** : **Valider** → engagement.
+5. **Financier** : sur le bon de commande, **Enregistrer un paiement** ; **DE** : *Paiements* → **Approuver**.
+6. **Financier** : **Clôturer** le bon de commande → le reliquat retourne au solde.
+7. **Comité de Contrôle** : *Administration → Journal d'audit* → **Vérifier l'intégrité**.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Règles du cahier des charges et où elles sont codées
 
-## Agentic Development
+| Règle | Fichier |
+|---|---|
+| RG-01 solde, RG-07 blocage, RG-08 alerte, RG-09 dérogation | `app/Services/BudgetLedger.php` |
+| RG-02 pré-engagement, annulation | `app/Services/PurchaseRequestService.php` |
+| RG-03 engagement, RG-05 reliquat | `app/Services/PurchaseOrderService.php` |
+| RG-04 plafond, RG-15 double signature, RG-16 trésorerie, écart de change | `app/Services/PaymentService.php` |
+| RG-10 révisions et archivage, RG-13 activation du projet | `app/Services/BudgetService.php` |
+| RG-11 devises | `app/Services/CurrencyService.php` |
+| RG-14 ségrégation, suppléance, délégation | `app/Services/ApprovalService.php` |
+| RG-20 audit chaîné et inaltérable | `app/Services/AuditService.php` + migration `protect_audit_and_ledger` |
+| Fondation A (emails + cloche) | `app/Notifications/HrNotification.php`, `app/Services/NotificationService.php` |
+| Fondation C (habilitations par module) | `app/Models/User.php`, `app/Filament/Concerns/HasModuleAccess.php` |
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Les écrans sont dans `app/Filament/Resources`, un dossier par module. Ils n'appliquent aucune
+règle eux-mêmes : ils appellent les services ci-dessus.
 
-```bash
-composer require laravel/boost --dev
+## Tests automatiques
 
-php artisan boost:install
+```
+php artisan test
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+18 tests : les règles métier (blocage, alertes, pré-engagement, conversions USD/CDF, paiements
+partiels, clôture, suppléance, dérogation, révision et archivage, audit inaltérable) et les
+écrans (chaque page s'ouvre ; parcours achat, paiement, budget, habilitations). À chaque mise à
+jour, GitHub relance ces tests et publie un nouveau ZIP dans **Releases** s'ils réussissent.
 
-## Contributing
+## Paramètres modifiables
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Valeurs par défaut dans `app/Models/Setting.php` : seuil d'alerte de consommation (80 %),
+délai de régularisation d'une dérogation (30 jours), délai de validation (72 heures).
 
-## Code of Conduct
+## Emails
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+En local, les emails sont écrits dans `storage/logs/laravel.log` (`MAIL_MAILER=log`), et chaque
+notification apparaît aussi dans la cloche de l'application. Pour de vrais envois, renseignez
+`MAIL_MAILER=smtp` et les paramètres SMTP dans le fichier `.env`.
 
-## Security Vulnerabilities
+## Ce qui reste à faire pour la Phase 1
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Fondation B — pièces jointes (factures, proformas, justifications).
+- Fondation D — planificateur des rappels et des escalades (les échéances sont déjà enregistrées).
+- Double authentification pour la DE, le Financier et l'administrateur.
+- Module RH & Contrats.
