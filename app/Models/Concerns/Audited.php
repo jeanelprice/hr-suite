@@ -14,13 +14,16 @@ trait Audited
 {
     public static function bootAudited(): void
     {
-        $hidden = ['password', 'remember_token', 'updated_at', 'created_at'];
+        $base = ['password', 'remember_token', 'updated_at', 'created_at'];
+        $hiddenFor = fn ($model) => array_merge($base, property_exists($model, 'auditExclude') ? $model->auditExclude : []);
 
-        static::created(function ($model) use ($hidden) {
+        static::created(function ($model) use ($hiddenFor) {
+            $hidden = $hiddenFor($model);
             app(AuditService::class)->record(class_basename($model).'_CREE', $model, null, Arr::except($model->getAttributes(), $hidden));
         });
 
-        static::updated(function ($model) use ($hidden) {
+        static::updated(function ($model) use ($hiddenFor) {
+            $hidden = $hiddenFor($model);
             $changes = Arr::except($model->getChanges(), $hidden);
             if ($changes === []) {
                 return;
@@ -29,7 +32,8 @@ trait Audited
             app(AuditService::class)->record(class_basename($model).'_MODIFIE', $model, $before, $changes);
         });
 
-        static::deleted(function ($model) use ($hidden) {
+        static::deleted(function ($model) use ($hiddenFor) {
+            $hidden = $hiddenFor($model);
             app(AuditService::class)->record(class_basename($model).'_SUPPRIME', $model, Arr::except($model->getAttributes(), $hidden), null);
         });
     }

@@ -210,9 +210,9 @@ class ScreensTest extends TestCase
         $de = $this->as('de');
         $cp = User::query()->where('email', 'chef.projet@humaniteresilience.org')->first();
         Livewire::test(Resources\Users\RelationManagers\ModuleAccessesRelationManager::class, ['ownerRecord' => $cp, 'pageClass' => Resources\Users\Pages\EditUser::class])
-            ->callTableAction('create', data: ['module' => 'RH', 'level' => 'LECTURE'])
+            ->callTableAction('create', data: ['module' => 'EVALUATIONS', 'level' => 'LECTURE'])
             ->assertHasNoTableActionErrors();
-        $this->assertTrue($cp->fresh()->canInModule(\App\Enums\AppModule::RH));
-        $this->assertSame($de->id, $cp->moduleAccesses()->where('module', 'RH')->value('granted_by_id'));
+        $this->assertTrue($cp->fresh()->canInModule(\App\Enums\AppModule::EVALUATIONS));
+        $this->assertSame($de->id, $cp->moduleAccesses()->where('module', 'EVALUATIONS')->value('granted_by_id'));
     }
 }

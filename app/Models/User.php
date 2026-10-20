@@ -46,6 +46,12 @@ class User extends Authenticatable implements FilamentUser
         return $this->belongsTo(User::class, 'supervisor_id');
     }
 
+    /** Dossier du personnel lié à ce compte (facultatif) */
+    public function employee(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Employee::class);
+    }
+
     public function moduleAccesses(): HasMany
     {
         return $this->hasMany(ModuleAccess::class);

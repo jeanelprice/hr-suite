@@ -30,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
             'derogation' => Derogation::class,
             'module_access' => ModuleAccess::class,
             'delegation' => Delegation::class,
+            'employee' => \App\Models\Employee::class,
+            'contract' => \App\Models\Contract::class,
+            'contract_amendment' => \App\Models\ContractAmendment::class,
+            'employee_family' => \App\Models\EmployeeFamily::class,
+            'disciplinary_action' => \App\Models\DisciplinaryAction::class,
         ]);
     }
 }

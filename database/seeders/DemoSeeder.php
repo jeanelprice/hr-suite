@@ -110,6 +110,8 @@ class DemoSeeder extends Seeder
         $budgets->approve($users['de'], $version, 'Budget initial validé (démo)');
         Auth::logout();
 
+        $this->call(PersonnelDemoSeeder::class);
+
         $this->command?->info('Données de démonstration créées. Mot de passe de tous les comptes : '.self::PASSWORD);
         foreach ($accounts as [$name, $email, $role]) {
             $this->command?->line(sprintf('  %-28s %s', $role->getLabel(), $email));

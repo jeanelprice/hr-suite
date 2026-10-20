@@ -68,6 +68,26 @@ class NotificationService
     }
 
     /**
+     * Responsables RH (module RH en création ou validation) et Direction Exécutive :
+     * destinataires des alertes du personnel (échéances de contrat, fin d'essai).
+     *
+     * @return Collection<int, User>
+     */
+    public function hrManagers(): Collection
+    {
+        $rh = ModuleAccess::query()
+            ->where('module', AppModule::RH->value)
+            ->whereIn('level', [AccessLevel::CREATION->value, AccessLevel::VALIDATION->value])
+            ->whereNull('revoked_at')
+            ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->with('user')
+            ->get()
+            ->pluck('user');
+
+        return $rh->merge(User::query()->where('role', Role::DIRECTION_EXECUTIVE->value)->get())->filter()->unique('id')->values();
+    }
+
+    /**
      * Validateurs à prévenir : la DE, ou la DE adjointe quand l'auteur est la DE (RG-14),
      * plus les délégués en cours sur le module.
      *

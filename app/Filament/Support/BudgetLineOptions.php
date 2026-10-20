@@ -39,4 +39,18 @@ final class BudgetLineOptions
                     .Money::fmt($ledger->balance($l)->available()).' '.$l->budget->currency->value.')',
             ])->all();
     }
+
+    /** Toutes les lignes actives des budgets validés, tous projets confondus (ventilation des contrats) */
+    public static function allApproved(): array
+    {
+        return BudgetLine::query()
+            ->where('is_active', true)
+            ->whereHas('budget', fn ($q) => $q->whereNotNull('current_version_id'))
+            ->with('budget.fiscalYear', 'budget.project')
+            ->get()
+            ->sortBy(fn (BudgetLine $l) => $l->budget->project->code.$l->budget->fiscalYear->year.$l->code)
+            ->mapWithKeys(fn (BudgetLine $l) => [
+                $l->id => "{$l->budget->project->code} · {$l->budget->fiscalYear->year} · {$l->code} — {$l->label}",
+            ])->all();
+    }
 }

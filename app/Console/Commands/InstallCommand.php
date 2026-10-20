@@ -39,7 +39,16 @@ class InstallCommand extends Command
             $this->warn('  Une base de données existe déjà : elle est conservée.');
             $this->line('  Pour repartir de zéro (tout est effacé) : php artisan hr:installer --force');
             Artisan::call('migrate', ['--force' => true]);
-            $this->line('  ✓ Tables mises à jour');
+            $this->line('  ✓ Tables mises à jour (vos données sont conservées)');
+            Artisan::call('optimize:clear');
+            $this->line('  ✓ Caches vidés');
+
+            // Base de démonstration d'une version précédente : ajoute la démonstration du personnel
+            if (\App\Models\User::query()->where('email', 'direction@humaniteresilience.org')->exists()
+                && ! \App\Models\Employee::query()->exists()) {
+                Artisan::call('db:seed', ['--class' => \Database\Seeders\PersonnelDemoSeeder::class, '--force' => true]);
+                $this->line('  ✓ Démonstration du personnel ajoutée (compte RH : rh@humaniteresilience.org)');
+            }
 
             return self::SUCCESS;
         }
@@ -59,6 +68,7 @@ class InstallCommand extends Command
                 ['Financier', 'financier@humaniteresilience.org', DemoSeeder::PASSWORD],
                 ['Chef de projet', 'chef.projet@humaniteresilience.org', DemoSeeder::PASSWORD],
                 ['Comité de Contrôle', 'controle@humaniteresilience.org', DemoSeeder::PASSWORD],
+                ['Responsable RH', 'rh@humaniteresilience.org', DemoSeeder::PASSWORD],
             ]);
         }
 
