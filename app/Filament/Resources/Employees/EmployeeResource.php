@@ -257,6 +257,26 @@ class EmployeeResource extends Resource
                     TextEntry::make('bank_account')->label('Compte')->placeholder('—'),
                 ]),
             ]),
+            Section::make('Congés')->collapsible()->columns(4)
+                ->visible(fn (Employee $record) => $sensitive($record) || PersonnelAccess::canView(Auth::user()))
+                ->schema([
+                    TextEntry::make('leave_available')->label('Congé annuel disponible')->weight('bold')
+                        ->state(function (Employee $record) {
+                            $s = app(\App\Services\LeaveService::class);
+                            $b = $s->balance($record);
+
+                            return $s->fmt($b['available']).' j sur '.$s->fmt($b['entitlement']).' j de droit annuel';
+                        })
+                        ->helperText(function (Employee $record) {
+                            $b = app(\App\Services\LeaveService::class)->balance($record);
+
+                            return 'Année contractuelle du '.$b['from']->format('d/m/Y').' au '.$b['to']->format('d/m/Y');
+                        })->columnSpan(2),
+                    TextEntry::make('leave_taken')->label('Pris cette année')
+                        ->state(fn (Employee $record) => app(\App\Services\LeaveService::class)->fmt(app(\App\Services\LeaveService::class)->balance($record)['taken']).' j'),
+                    TextEntry::make('leave_recovery')->label('Récupération')
+                        ->state(fn (Employee $record) => app(\App\Services\LeaveService::class)->fmt(app(\App\Services\LeaveService::class)->balance($record, 'RECUPERATION')['available']).' j'),
+                ]),
             Section::make('Carte de service')->collapsible()->columns(4)
                 ->visible(fn (Employee $record) => $record->serviceCards()->exists())
                 ->schema([
@@ -310,6 +330,8 @@ class EmployeeResource extends Resource
     {
         return [
             RelationManagers\ContractsRelationManager::class,
+            RelationManagers\LeaveRequestsRelationManager::class,
+            RelationManagers\LeaveLedgerRelationManager::class,
             RelationManagers\DocumentsRelationManager::class,
             RelationManagers\FamilyRelationManager::class,
             RelationManagers\DiplomasRelationManager::class,

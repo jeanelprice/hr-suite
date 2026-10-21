@@ -74,7 +74,8 @@ class AttachmentService
     {
         return match (true) {
             $attachable instanceof Employee => $attachable,
-            $attachable instanceof EmployeeFamily, $attachable instanceof DisciplinaryAction, $attachable instanceof Contract => $attachable->employee,
+            $attachable instanceof EmployeeFamily, $attachable instanceof DisciplinaryAction, $attachable instanceof Contract,
+            $attachable instanceof \App\Models\LeaveRequest => $attachable->employee,
             $attachable instanceof ContractAmendment => $attachable->contract->employee,
             default => null,
         };
@@ -94,6 +95,11 @@ class AttachmentService
 
     public function canManage(User $user, Model $attachable): bool
     {
+        // L'employé joint lui-même le justificatif de sa demande de congé (certificat médical…)
+        if ($attachable instanceof \App\Models\LeaveRequest && $attachable->employee->user_id === $user->id) {
+            return true;
+        }
+
         return $this->employeeOf($attachable) ? PersonnelAccess::canManage($user) : $user->isDirectionExecutive();
     }
 }

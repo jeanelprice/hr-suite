@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
  */
 class NumberingService
 {
-    private const TABLES = ['DA' => 'purchase_requests', 'BC' => 'purchase_orders', 'PAI' => 'payments', 'CT' => 'contracts'];
+    private const TABLES = ['DA' => 'purchase_requests', 'BC' => 'purchase_orders', 'PAI' => 'payments', 'CT' => 'contracts', 'CG' => 'leave_requests'];
 
     public function next(string $prefix): string
     {

@@ -5,7 +5,8 @@ et **Filament 5**. Cette première version couvre la **Phase 1 Finances & Achats
 charges v1.1 : projets, budgets versionnés, demandes d'achat, bons de commande, paiements,
 dérogations, comptes et habilitations, journal d'audit — et l'**étape 1 du module Personnel** :
 dossier du personnel avec photo, contrats, avenants, période d'essai, carte de service,
-discipline, sortie, organigramme et pièces jointes.
+discipline, sortie, organigramme et pièces jointes — et l'**étape 2** : congés et absences,
+avec un espace personnel pour chaque employé.
 
 ## Installer sur un ordinateur Windows (sans Composer, sans internet)
 
@@ -78,6 +79,28 @@ lancez la commande à la main ou via le Planificateur de tâches Windows.
 Les documents joints acceptent 10 Mo par fichier. Si un dépôt plus lourd échoue, augmentez
 `upload_max_filesize` et `post_max_size` dans les réglages PHP de Herd.
 
+## Essayer les congés (étape 2)
+
+1. Connectez-vous avec le compte **Financier** : *Mon espace* montre sa fiche, son solde de congé
+   annuel (1,5 jour par mois de service) et ses demandes. **Demander un congé** : le nombre de jours
+   ouvrables s'affiche (week-ends et jours fériés exclus) avec le solde disponible.
+2. Sa supérieure, la **Direction Exécutive**, ouvre *Congés à valider* (le badge indique le nombre
+   de demandes) et clique **Valider** ; le **Responsable RH** clique ensuite **Approuver**.
+   L'employé est prévenu par email et dans la cloche.
+3. Le RH, dans *Personnel → Congés et absences* : saisie pour un employé sans compte, **absence non
+   autorisée** (alerte dès 2 jours), **ajustement de solde** (reprise des soldes existants) ;
+   *Congés à valider* → **Accorder une récupération**.
+4. Règles appliquées : pas de congé annuel pendant l'essai ; avance jusqu'à la moitié du droit ;
+   solde expiré à la fin de l'année contractuelle ; +1 jour par tranche de 5 ans d'ancienneté
+   (24 jours au plus) ; maladie de 2 jours ou plus approuvée seulement avec le certificat ;
+   maternité de 14 semaines dont 6 avant l'accouchement (2/3 du salaire, essai prolongé) ;
+   compassion 4 jours, études et congé non payé approuvés par la DE.
+5. Les types de congé et les jours fériés se modifient dans *Personnel → Types de congé* et
+   *Jours fériés* (jours fériés légaux de 2026 et 2027 déjà chargés).
+
+`php artisan hr:conges` inscrit chaque jour les jours acquis ; le calcul se fait aussi à chaque
+consultation d'un solde, la commande n'est donc pas indispensable sur un poste.
+
 ## Essayer le circuit complet
 
 1. **Chef de projet** : *Achats → Demandes d'achat → Nouvelle demande*. Le solde de chaque ligne
@@ -108,6 +131,8 @@ Les documents joints acceptent 10 Mo par fichier. Si un dépôt plus lourd écho
 | Dossier, hiérarchie, carte, discipline, sortie, RG-27 liens de parenté | `app/Services/EmployeeService.php` |
 | RG-26 données personnelles (qui voit quoi) | `app/Support/PersonnelAccess.php` |
 | RG-19 échéances du personnel | `app/Console/Commands/PersonnelDeadlinesCommand.php` |
+| RG-23 congés : acquisition, soldes, circuit, règles par type | `app/Services/LeaveService.php` |
+| Mon espace, Congés à valider | `app/Filament/Pages/MySpace.php`, `app/Filament/Pages/LeaveApprovals.php` |
 
 Les écrans sont dans `app/Filament/Resources`, un dossier par module. Ils n'appliquent aucune
 règle eux-mêmes : ils appellent les services ci-dessus.
@@ -118,11 +143,13 @@ règle eux-mêmes : ils appellent les services ci-dessus.
 php artisan test
 ```
 
-31 tests : les règles métier (blocage, alertes, pré-engagement, conversions USD/CDF, paiements
+43 tests : les règles métier (blocage, alertes, pré-engagement, conversions USD/CDF, paiements
 partiels, clôture, suppléance, dérogation, révision et archivage, audit inaltérable ; contrats,
 avenants, période d'essai, sortie, discipline, liens de parenté, données chiffrées, accès aux
 documents, alertes d'échéance) et les écrans (chaque page s'ouvre ; parcours achat, paiement,
-budget, habilitations, dossier avec photo, contrat signé, avenant, carte et impressions). À chaque mise à
+budget, habilitations, dossier avec photo, contrat signé, avenant, carte et impressions ;
+congés : décompte des jours, acquisition et ancienneté, expiration, circuit, maternité, maladie,
+absences, Mon espace et Congés à valider). À chaque mise à
 jour, GitHub relance ces tests et publie un nouveau ZIP dans **Releases** s'ils réussissent.
 
 ## Paramètres modifiables
@@ -138,8 +165,7 @@ notification apparaît aussi dans la cloche de l'application. Pour de vrais envo
 
 ## Ce qui reste à faire
 
-- Module Personnel, étapes 2 à 5 : congés et absences avec l'espace personnel, recrutement,
-  évaluations, paie (voir « Modèle de données du module Personnel »).
+- Module Personnel, étapes 3 à 5 : recrutement, évaluations, paie (voir « Modèle de données du module Personnel »).
 - Pièces jointes sur les achats (factures, proformas) avec le composant de la Fondation B.
 - Fondation D — rappels et escalades des validations (les échéances du personnel sont faites).
 - Double authentification pour la DE, le Financier et l'administrateur.

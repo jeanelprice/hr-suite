@@ -191,6 +191,27 @@ class ContractService
         });
     }
 
+    /**
+     * Prolongation de l'essai imposée par un congé de maternité (Manuel §5.10.3) :
+     * elle peut dépasser la durée maximale de 6 mois.
+     */
+    public function extendProbationForLeave(User $actor, Contract $contract, string $newEnd, string $reason): ContractAmendment
+    {
+        $current = $contract->termsAt()['probation_end_date'];
+        $amendment = $contract->amendments()->create([
+            'kind' => AmendmentKind::PROLONGATION_ESSAI,
+            'old_value' => ['probation_end_date' => $current],
+            'new_value' => ['probation_end_date' => $newEnd],
+            'effective_date' => today()->toDateString(),
+            'reason' => $reason,
+            'created_by_id' => $actor->id,
+        ]);
+        $contract->unsetRelation('amendments');
+        $this->scheduleDeadlines($contract);
+
+        return $amendment;
+    }
+
     /** Poste et lieu d'un avenant arrivé à sa date d'effet : reportés dans le dossier */
     public function applyToEmployee(User $actor, ContractAmendment $amendment): void
     {

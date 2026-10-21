@@ -144,6 +144,7 @@ class PersonnelDemoSeeder extends Seeder
             }
         }
         Auth::logout();
+        $this->call(LeaveDemoSeeder::class);
 
         $this->command?->info('Démonstration du personnel créée. Compte Responsable RH : rh@humaniteresilience.org / '.DemoSeeder::PASSWORD);
     }

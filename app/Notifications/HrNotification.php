@@ -31,7 +31,7 @@ class HrNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $mail = (new MailMessage)->subject('[HR Suite] '.$this->subject)->greeting('Bonjour,');
-        foreach ($this->lines as $line) {
+        foreach (array_filter($this->lines) as $line) {
             $mail->line($line);
         }
         if ($this->url) {
@@ -45,7 +45,7 @@ class HrNotification extends Notification
     {
         return FilamentNotification::make()
             ->title($this->subject)
-            ->body(implode("\n", $this->lines))
+            ->body(implode("\n", array_filter($this->lines)))
             ->status($this->status)
             ->getDatabaseMessage();
     }

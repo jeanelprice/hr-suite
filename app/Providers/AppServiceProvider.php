@@ -35,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
             'contract_amendment' => \App\Models\ContractAmendment::class,
             'employee_family' => \App\Models\EmployeeFamily::class,
             'disciplinary_action' => \App\Models\DisciplinaryAction::class,
+            'leave_request' => \App\Models\LeaveRequest::class,
         ]);
     }
 }

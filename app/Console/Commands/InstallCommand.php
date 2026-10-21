@@ -48,6 +48,10 @@ class InstallCommand extends Command
                 && ! \App\Models\Employee::query()->exists()) {
                 Artisan::call('db:seed', ['--class' => \Database\Seeders\PersonnelDemoSeeder::class, '--force' => true]);
                 $this->line('  ✓ Démonstration du personnel ajoutée (compte RH : rh@humaniteresilience.org)');
+            } elseif (\App\Models\User::query()->where('email', 'rh@humaniteresilience.org')->exists()
+                && ! \App\Models\LeaveRequest::query()->exists()) {
+                Artisan::call('db:seed', ['--class' => \Database\Seeders\LeaveDemoSeeder::class, '--force' => true]);
+                $this->line('  ✓ Démonstration des congés ajoutée');
             }
 
             return self::SUCCESS;

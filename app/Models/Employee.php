@@ -142,6 +142,16 @@ class Employee extends Model
         return $this->hasOne(Contract::class)->where('status', ContractStatus::ACTIF->value)->latestOfMany('start_date');
     }
 
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function leaveLedger(): HasMany
+    {
+        return $this->hasMany(LeaveLedgerEntry::class);
+    }
+
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
