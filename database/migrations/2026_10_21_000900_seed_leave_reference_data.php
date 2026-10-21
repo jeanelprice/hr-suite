@@ -59,7 +59,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('public_holidays')->delete();
-        DB::table('leave_types')->delete();
+        // Les tables sont supprimées par la migration précédente lors d'un retour arrière.
     }
 };
